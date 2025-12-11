@@ -1,78 +1,59 @@
-# SIMPLE_CONFIG
+<p align="center">
+  <img src="https://raw.githubusercontent.com/simple-eiffel/claude_eiffel_op_docs/main/artwork/LOGO.png" alt="simple_ library logo" width="400">
+</p>
 
-Simple JSON-based configuration file management with dot-notation access and environment variable support.
+# simple_config
 
-## Features
+**[Documentation](https://simple-eiffel.github.io/simple_config/)** | **[GitHub](https://github.com/simple-eiffel/simple_config)**
 
-- JSON configuration files
-- Dot-notation key access (e.g., "database.host")
-- Environment variable fallback
-- Type-safe value access (string, integer, boolean, real)
-- Array and nested section support
-- File merging for environment-specific configs
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Eiffel](https://img.shields.io/badge/Eiffel-25.02-blue.svg)](https://www.eiffel.org/)
+[![Design by Contract](https://img.shields.io/badge/DbC-enforced-orange.svg)]()
 
-## Installation
+JSON-based configuration management for Eiffel applications.
 
-Add to your ECF file:
+Part of the [Simple Eiffel](https://github.com/simple-eiffel) ecosystem.
 
-```xml
-<library name="simple_config" location="$SIMPLE_CONFIG/simple_config.ecf"/>
-```
+## Status
 
-Set the environment variable:
-```
-SIMPLE_CONFIG=/path/to/simple_config
-```
+**Production**
 
-## Quick Start
+## Overview
+
+SIMPLE_CONFIG provides easy JSON-based configuration with dot-notation access and environment variable fallback. Supports type-safe access, file merging, and modification.
 
 ```eiffel
 local
     config: SIMPLE_CONFIG
 do
     create config.make_with_file ("config.json")
+    print (config.string_value ("database.host"))
+    print (config.integer_value ("database.port"))
 
-    -- Get values with dot notation
-    if attached config.string_value ("database.host") as host then
-        print ("Host: " + host + "%N")
-    end
-
-    -- Get with default
-    print ("Port: " + config.integer_value_or_default ("database.port", 5432).out)
-
-    -- Get from config or environment variable
-    if attached config.string_value_or_env ("api.key", "API_KEY") as key then
-        print ("API Key: " + key + "%N")
-    end
-
-    -- Modify and save
-    config.set_string ("app.name", "MyApp")
-    config.save
+    -- Config value or environment variable fallback
+    port := config.integer_value_or_env ("database.port", "DB_PORT", 5432)
 end
 ```
 
-## API Overview
+## Features
 
-### SIMPLE_CONFIG
+- **Dot Notation** - Access nested values: "database.host"
+- **Environment Fallback** - Config values can fall back to env vars
+- **Type-Safe Access** - String, integer, boolean, real, array accessors
+- **File Merging** - Merge multiple configs for environment overrides
+- **Modification** - Set values and save back to file
 
-| Feature | Description |
-|---------|-------------|
-| `make_with_file` | Load from JSON file |
-| `string_value (key)` | Get string value |
-| `integer_value (key)` | Get integer value |
-| `boolean_value (key)` | Get boolean value |
-| `real_value (key)` | Get real/double value |
-| `string_value_or_default` | Get with default |
-| `string_value_or_env` | Get from config or env var |
-| `string_list (key)` | Get array of strings |
-| `section (key)` | Get nested section |
-| `set_string/integer/boolean` | Set values |
-| `save` | Save to file |
-| `merge_file` | Merge another config |
+## Installation
 
-## Documentation
+1. Set environment variable:
+```bash
+export SIMPLE_CONFIG=/path/to/simple_config
+```
 
-- [API Documentation](https://simple-eiffel.github.io/simple_config/)
+2. Add to ECF:
+```xml
+<library name="simple_config" location="$SIMPLE_CONFIG/simple_config.ecf"/>
+```
 
 ## Dependencies
 
@@ -80,8 +61,4 @@ end
 
 ## License
 
-MIT License - see LICENSE file for details.
-
-## Author
-
-Larry Rix
+MIT License
