@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - simple_config</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="https://raw.githubusercontent.com/simple-eiffel/claude_eiffel_op_docs/main/artwork/LOGO.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_config</h1>
+        <p class="tagline">API Reference</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html" class="active">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_config">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="simple-config">
+            <h2>SIMPLE_CONFIG</h2>
+            <p>JSON-based configuration file management with dot-notation access.</p>
+            <p>Inherits from: <code>SIMPLE_JSON_CONSTANTS</code></p>
+
+            <h3>Creation</h3>
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>make</code></td>
+                    <td><code></code></td>
+                    <td>Create empty configuration.</td>
+                </tr>
+                <tr>
+                    <td><code>make_with_file</code></td>
+                    <td><code>(a_file_path: STRING)</code></td>
+                    <td>Create configuration from JSON file.</td>
+                </tr>
+            </table>
+
+            <h4>Contract: make_with_file</h4>
+<pre><code>make_with_file (a_file_path: STRING)
+    <span class="keyword">require</span>
+        path_not_empty: <span class="keyword">not</span> a_file_path.is_empty</code></pre>
+        </section>
+
+        <section id="access">
+            <h2>Access</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>file_path</code></td>
+                    <td><code>: STRING</code></td>
+                    <td>Path to configuration file.</td>
+                </tr>
+                <tr>
+                    <td><code>is_modified</code></td>
+                    <td><code>: BOOLEAN</code></td>
+                    <td>Has configuration been modified since last save?</td>
+                </tr>
+                <tr>
+                    <td><code>has_key</code></td>
+                    <td><code>(a_key: STRING): BOOLEAN</code></td>
+                    <td>Does configuration have key? Supports dot notation.</td>
+                </tr>
+            </table>
+
+            <h4>Contract: has_key</h4>
+<pre><code>has_key (a_key: STRING): BOOLEAN
+    <span class="keyword">require</span>
+        key_not_empty: <span class="keyword">not</span> a_key.is_empty</code></pre>
+        </section>
+
+        <section id="string-access">
+            <h2>String Access</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>string_value</code></td>
+                    <td><code>(a_key: STRING): detachable STRING</code></td>
+                    <td>Get string value for key. Supports dot notation.</td>
+                </tr>
+                <tr>
+                    <td><code>string_value_or_default</code></td>
+                    <td><code>(a_key, a_default: STRING): STRING</code></td>
+                    <td>Get string value or default if not found.</td>
+                </tr>
+                <tr>
+                    <td><code>string_value_or_env</code></td>
+                    <td><code>(a_key, a_env_var: STRING): detachable STRING</code></td>
+                    <td>Get from config or environment variable.</td>
+                </tr>
+                <tr>
+                    <td><code>string_value_or_env_or_default</code></td>
+                    <td><code>(a_key, a_env_var, a_default: STRING): STRING</code></td>
+                    <td>Get from config, then env, then default.</td>
+                </tr>
+            </table>
+
+            <h4>Contract: string_value</h4>
+<pre><code>string_value (a_key: STRING): <span class="keyword">detachable</span> STRING
+    <span class="keyword">require</span>
+        key_not_empty: <span class="keyword">not</span> a_key.is_empty</code></pre>
+
+            <h4>Contract: string_value_or_env</h4>
+<pre><code>string_value_or_env (a_key, a_env_var: STRING): <span class="keyword">detachable</span> STRING
+    <span class="keyword">require</span>
+        key_not_empty: <span class="keyword">not</span> a_key.is_empty
+        env_var_not_empty: <span class="keyword">not</span> a_env_var.is_empty</code></pre>
+        </section>
+
+        <section id="integer-access">
+            <h2>Integer Access</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>integer_value</code></td>
+                    <td><code>(a_key: STRING): INTEGER</code></td>
+                    <td>Get integer value (0 if not found).</td>
+                </tr>
+                <tr>
+                    <td><code>integer_value_or_default</code></td>
+                    <td><code>(a_key: STRING; a_default: INTEGER): INTEGER</code></td>
+                    <td>Get integer value or default.</td>
+                </tr>
+                <tr>
+                    <td><code>integer_value_or_env</code></td>
+                    <td><code>(a_key, a_env_var: STRING; a_default: INTEGER): INTEGER</code></td>
+                    <td>Get from config, parse env var, or use default.</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="boolean-access">
+            <h2>Boolean Access</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>boolean_value</code></td>
+                    <td><code>(a_key: STRING): BOOLEAN</code></td>
+                    <td>Get boolean value (False if not found).</td>
+                </tr>
+                <tr>
+                    <td><code>boolean_value_or_default</code></td>
+                    <td><code>(a_key: STRING; a_default: BOOLEAN): BOOLEAN</code></td>
+                    <td>Get boolean value or default.</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="real-access">
+            <h2>Real Access</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>real_value</code></td>
+                    <td><code>(a_key: STRING): DOUBLE</code></td>
+                    <td>Get real value (0.0 if not found).</td>
+                </tr>
+                <tr>
+                    <td><code>real_value_or_default</code></td>
+                    <td><code>(a_key: STRING; a_default: DOUBLE): DOUBLE</code></td>
+                    <td>Get real value or default.</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="array-access">
+            <h2>Array Access</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>string_list</code></td>
+                    <td><code>(a_key: STRING): ARRAYED_LIST [STRING]</code></td>
+                    <td>Get array of strings for key.</td>
+                </tr>
+                <tr>
+                    <td><code>integer_list</code></td>
+                    <td><code>(a_key: STRING): ARRAYED_LIST [INTEGER]</code></td>
+                    <td>Get array of integers for key.</td>
+                </tr>
+                <tr>
+                    <td><code>real_list</code></td>
+                    <td><code>(a_key: STRING): ARRAYED_LIST [DOUBLE]</code></td>
+                    <td>Get array of reals for key.</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="section-access">
+            <h2>Section Access</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>section</code></td>
+                    <td><code>(a_key: STRING): detachable SIMPLE_CONFIG</code></td>
+                    <td>Get nested section as separate config object.</td>
+                </tr>
+            </table>
+
+            <h4>Contract: section</h4>
+<pre><code>section (a_key: STRING): <span class="keyword">detachable</span> SIMPLE_CONFIG
+    <span class="keyword">require</span>
+        key_not_empty: <span class="keyword">not</span> a_key.is_empty</code></pre>
+        </section>
+
+        <section id="element-change">
+            <h2>Element Change</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>set_string</code></td>
+                    <td><code>(a_key, a_value: STRING)</code></td>
+                    <td>Set string value for key.</td>
+                </tr>
+                <tr>
+                    <td><code>set_integer</code></td>
+                    <td><code>(a_key: STRING; a_value: INTEGER)</code></td>
+                    <td>Set integer value for key.</td>
+                </tr>
+                <tr>
+                    <td><code>set_boolean</code></td>
+                    <td><code>(a_key: STRING; a_value: BOOLEAN)</code></td>
+                    <td>Set boolean value for key.</td>
+                </tr>
+                <tr>
+                    <td><code>set_real</code></td>
+                    <td><code>(a_key: STRING; a_value: DOUBLE)</code></td>
+                    <td>Set real value for key.</td>
+                </tr>
+                <tr>
+                    <td><code>set_section</code></td>
+                    <td><code>(a_key: STRING; a_section: SIMPLE_CONFIG)</code></td>
+                    <td>Set nested section for key.</td>
+                </tr>
+                <tr>
+                    <td><code>remove</code></td>
+                    <td><code>(a_key: STRING)</code></td>
+                    <td>Remove value for key.</td>
+                </tr>
+            </table>
+
+            <h4>Contract: set_string</h4>
+<pre><code>set_string (a_key, a_value: STRING)
+    <span class="keyword">require</span>
+        key_not_empty: <span class="keyword">not</span> a_key.is_empty
+    <span class="keyword">ensure</span>
+        modified: is_modified</code></pre>
+
+            <p><strong>Note:</strong> Setting does NOT support dot notation. Use <code>set_section</code> for nested values.</p>
+        </section>
+
+        <section id="file-operations">
+            <h2>File Operations</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>load</code></td>
+                    <td><code></code></td>
+                    <td>Load configuration from file.</td>
+                </tr>
+                <tr>
+                    <td><code>merge_file</code></td>
+                    <td><code>(a_file_path: STRING)</code></td>
+                    <td>Merge another config file, overriding existing values.</td>
+                </tr>
+                <tr>
+                    <td><code>save</code></td>
+                    <td><code></code></td>
+                    <td>Save configuration to file.</td>
+                </tr>
+                <tr>
+                    <td><code>save_to</code></td>
+                    <td><code>(a_file_path: STRING)</code></td>
+                    <td>Save configuration to specified file.</td>
+                </tr>
+            </table>
+
+            <h4>Contract: save</h4>
+<pre><code>save
+    <span class="keyword">require</span>
+        has_file_path: <span class="keyword">not</span> file_path.is_empty
+    <span class="keyword">ensure</span>
+        not_modified: <span class="keyword">not</span> is_modified</code></pre>
+
+            <h4>Contract: save_to</h4>
+<pre><code>save_to (a_file_path: STRING)
+    <span class="keyword">require</span>
+        path_not_empty: <span class="keyword">not</span> a_file_path.is_empty
+    <span class="keyword">ensure</span>
+        path_set: file_path = a_file_path
+        not_modified: <span class="keyword">not</span> is_modified</code></pre>
+
+            <h4>Contract: merge_file</h4>
+<pre><code>merge_file (a_file_path: STRING)
+    <span class="keyword">require</span>
+        path_not_empty: <span class="keyword">not</span> a_file_path.is_empty</code></pre>
+        </section>
+
+        <section id="output">
+            <h2>Output</h2>
+
+            <table class="api-table">
+                <tr>
+                    <th>Feature</th>
+                    <th>Signature</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>to_json</code></td>
+                    <td><code>: STRING</code></td>
+                    <td>Convert configuration to compact JSON string.</td>
+                </tr>
+                <tr>
+                    <td><code>to_json_pretty</code></td>
+                    <td><code>: STRING</code></td>
+                    <td>Convert configuration to formatted JSON string.</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="dot-notation">
+            <h2>Dot Notation Reference</h2>
+
+            <p>All <strong>read</strong> operations support dot notation for nested access:</p>
+
+            <table class="api-table">
+                <tr>
+                    <th>Key</th>
+                    <th>JSON Path</th>
+                </tr>
+                <tr>
+                    <td><code>"host"</code></td>
+                    <td>Top-level "host" key</td>
+                </tr>
+                <tr>
+                    <td><code>"database.host"</code></td>
+                    <td>database -> host</td>
+                </tr>
+                <tr>
+                    <td><code>"app.server.port"</code></td>
+                    <td>app -> server -> port</td>
+                </tr>
+            </table>
+
+            <p><strong>Note:</strong> Write operations (set_*) do NOT support dot notation. Build nested structures using <code>set_section</code>.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 simple_* ecosystem. MIT License.</p>
+        <p>
+            <a href="https://github.com/simple-eiffel/simple_config">GitHub</a> |
+            <a href="https://simple-eiffel.github.io">Documentation</a>
+        </p>
+    </footer>
+</body>
+</html>

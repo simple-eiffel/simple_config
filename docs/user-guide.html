@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - simple_config</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="https://raw.githubusercontent.com/simple-eiffel/claude_eiffel_op_docs/main/artwork/LOGO.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_config</h1>
+        <p class="tagline">User Guide</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="user-guide.html" class="active">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_config">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="introduction">
+            <h2>Introduction</h2>
+            <p>simple_config provides JSON-based configuration file management for Eiffel applications. It features dot-notation path access for nested values, environment variable fallback, and config file merging.</p>
+        </section>
+
+        <section id="installation">
+            <h2>Installation</h2>
+
+            <h3>1. Set Environment Variable</h3>
+<pre><code>export SIMPLE_CONFIG=/path/to/simple_config</code></pre>
+
+            <h3>2. Add to ECF</h3>
+<pre><code>&lt;library name="simple_config" location="$SIMPLE_CONFIG/simple_config.ecf"/&gt;</code></pre>
+
+            <h3>3. Dependencies</h3>
+            <p>simple_config uses simple_json internally. Ensure SIMPLE_JSON is also configured:</p>
+<pre><code>export SIMPLE_JSON=/path/to/simple_json</code></pre>
+        </section>
+
+        <section id="config-files">
+            <h2>Configuration Files</h2>
+
+            <h3>JSON Format</h3>
+            <p>Configuration files are standard JSON:</p>
+<pre><code>{
+    "app": {
+        "name": "MyApplication",
+        "version": "1.0.0",
+        "debug": false
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "mydb",
+        "pool_size": 10
+    },
+    "features": {
+        "caching": true,
+        "logging": true,
+        "metrics": false
+    },
+    "allowed_hosts": ["localhost", "127.0.0.1", "example.com"]
+}</code></pre>
+
+            <h3>Dot Notation</h3>
+            <p>Access nested values using dot notation:</p>
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+
+    <span class="comment">-- Direct access with dot notation</span>
+    print (config.string_value (<span class="string">"database.host"</span>))  <span class="comment">-- "localhost"</span>
+    print (config.integer_value (<span class="string">"database.port"</span>)) <span class="comment">-- 5432</span>
+    print (config.boolean_value (<span class="string">"features.caching"</span>)) <span class="comment">-- True</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="loading">
+            <h2>Loading Configuration</h2>
+
+            <h3>From File</h3>
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="comment">-- Load on creation</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Empty Configuration</h3>
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="comment">-- Create empty, build programmatically</span>
+    <span class="keyword">create</span> config.make
+    config.set_string (<span class="string">"app.name"</span>, <span class="string">"MyApp"</span>)
+    config.set_integer (<span class="string">"port"</span>, 8080)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Reloading</h3>
+<pre><code><span class="comment">-- Reload from disk (useful for hot-reload)</span>
+config.load</code></pre>
+        </section>
+
+        <section id="accessing-values">
+            <h2>Accessing Values</h2>
+
+            <h3>String Values</h3>
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+    host: STRING
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+
+    <span class="comment">-- Basic access (may be Void)</span>
+    <span class="keyword">if</span> <span class="keyword">attached</span> config.string_value (<span class="string">"database.host"</span>) <span class="keyword">as</span> h <span class="keyword">then</span>
+        host := h
+    <span class="keyword">end</span>
+
+    <span class="comment">-- With default value</span>
+    host := config.string_value_or_default (<span class="string">"database.host"</span>, <span class="string">"localhost"</span>)
+
+    <span class="comment">-- From config or environment variable</span>
+    host := config.string_value_or_env (<span class="string">"database.host"</span>, <span class="string">"DB_HOST"</span>)
+
+    <span class="comment">-- Config, then env, then default</span>
+    host := config.string_value_or_env_or_default (<span class="string">"database.host"</span>, <span class="string">"DB_HOST"</span>, <span class="string">"localhost"</span>)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Integer Values</h3>
+<pre><code><span class="keyword">local</span>
+    port: INTEGER
+<span class="keyword">do</span>
+    <span class="comment">-- Basic (0 if not found)</span>
+    port := config.integer_value (<span class="string">"database.port"</span>)
+
+    <span class="comment">-- With default</span>
+    port := config.integer_value_or_default (<span class="string">"database.port"</span>, 5432)
+
+    <span class="comment">-- From config or env or default</span>
+    port := config.integer_value_or_env (<span class="string">"database.port"</span>, <span class="string">"DB_PORT"</span>, 5432)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Boolean Values</h3>
+<pre><code><span class="keyword">local</span>
+    debug_mode: BOOLEAN
+<span class="keyword">do</span>
+    <span class="comment">-- Basic (False if not found)</span>
+    debug_mode := config.boolean_value (<span class="string">"app.debug"</span>)
+
+    <span class="comment">-- With default</span>
+    debug_mode := config.boolean_value_or_default (<span class="string">"app.debug"</span>, False)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Real/Double Values</h3>
+<pre><code><span class="keyword">local</span>
+    timeout: DOUBLE
+<span class="keyword">do</span>
+    <span class="comment">-- Basic (0.0 if not found)</span>
+    timeout := config.real_value (<span class="string">"network.timeout"</span>)
+
+    <span class="comment">-- With default</span>
+    timeout := config.real_value_or_default (<span class="string">"network.timeout"</span>, 30.0)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Array Values</h3>
+<pre><code><span class="keyword">local</span>
+    hosts: ARRAYED_LIST [STRING]
+    ports: ARRAYED_LIST [INTEGER]
+    thresholds: ARRAYED_LIST [DOUBLE]
+<span class="keyword">do</span>
+    <span class="comment">-- String arrays</span>
+    hosts := config.string_list (<span class="string">"allowed_hosts"</span>)
+    <span class="keyword">across</span> hosts <span class="keyword">as</span> h <span class="keyword">loop</span>
+        print (h + <span class="string">"%N"</span>)
+    <span class="keyword">end</span>
+
+    <span class="comment">-- Integer arrays</span>
+    ports := config.integer_list (<span class="string">"service.ports"</span>)
+
+    <span class="comment">-- Real arrays</span>
+    thresholds := config.real_list (<span class="string">"metrics.thresholds"</span>)
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="sections">
+            <h2>Working with Sections</h2>
+
+            <h3>Getting Sections</h3>
+<pre><code><span class="keyword">local</span>
+    config, db_config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+
+    <span class="comment">-- Get nested section as separate config</span>
+    <span class="keyword">if</span> <span class="keyword">attached</span> config.section (<span class="string">"database"</span>) <span class="keyword">as</span> db <span class="keyword">then</span>
+        <span class="comment">-- Access values directly without prefix</span>
+        print (db.string_value (<span class="string">"host"</span>))
+        print (db.integer_value (<span class="string">"port"</span>))
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+
+            <h3>Deep Sections</h3>
+<pre><code><span class="comment">-- With config like: {"logging": {"handlers": {"file": {"path": "/var/log"}}}}</span>
+<span class="keyword">if</span> <span class="keyword">attached</span> config.section (<span class="string">"logging.handlers.file"</span>) <span class="keyword">as</span> file_handler <span class="keyword">then</span>
+    print (file_handler.string_value (<span class="string">"path"</span>))
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="env-fallback">
+            <h2>Environment Variable Fallback</h2>
+
+            <h3>Priority Chain</h3>
+            <p>The <code>_or_env</code> features check in order:</p>
+            <ol>
+                <li>Configuration file value</li>
+                <li>Environment variable</li>
+                <li>Default value (if provided)</li>
+            </ol>
+
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+    db_host: STRING
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+
+    <span class="comment">-- If "database.host" exists in config, use it</span>
+    <span class="comment">-- Otherwise, check $DB_HOST environment variable</span>
+    <span class="comment">-- Finally, use "localhost" as default</span>
+    db_host := config.string_value_or_env_or_default (
+        <span class="string">"database.host"</span>,
+        <span class="string">"DB_HOST"</span>,
+        <span class="string">"localhost"</span>
+    )
+<span class="keyword">end</span></code></pre>
+
+            <h3>Use Cases</h3>
+            <ul>
+                <li><strong>Development</strong>: Use config file values</li>
+                <li><strong>Production</strong>: Override with environment variables</li>
+                <li><strong>Containers</strong>: Pass config via environment</li>
+            </ul>
+        </section>
+
+        <section id="modifying">
+            <h2>Modifying Configuration</h2>
+
+            <h3>Setting Values</h3>
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make
+
+    <span class="comment">-- Set various types</span>
+    config.set_string (<span class="string">"app.name"</span>, <span class="string">"MyApp"</span>)
+    config.set_integer (<span class="string">"port"</span>, 8080)
+    config.set_boolean (<span class="string">"debug"</span>, True)
+    config.set_real (<span class="string">"timeout"</span>, 30.5)
+
+    <span class="comment">-- Check modification status</span>
+    <span class="keyword">if</span> config.is_modified <span class="keyword">then</span>
+        print (<span class="string">"Config has unsaved changes%N"</span>)
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+
+            <h3>Setting Nested Sections</h3>
+<pre><code><span class="keyword">local</span>
+    config, db_section: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make
+
+    <span class="comment">-- Create a section</span>
+    <span class="keyword">create</span> db_section.make
+    db_section.set_string (<span class="string">"host"</span>, <span class="string">"localhost"</span>)
+    db_section.set_integer (<span class="string">"port"</span>, 5432)
+
+    <span class="comment">-- Add section to main config</span>
+    config.set_section (<span class="string">"database"</span>, db_section)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Removing Values</h3>
+<pre><code><span class="comment">-- Remove a key</span>
+config.remove (<span class="string">"debug"</span>)</code></pre>
+        </section>
+
+        <section id="saving">
+            <h2>Saving Configuration</h2>
+
+            <h3>Save to Original File</h3>
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+    config.set_boolean (<span class="string">"debug"</span>, True)
+
+    <span class="comment">-- Save back to config.json</span>
+    config.save
+<span class="keyword">end</span></code></pre>
+
+            <h3>Save to New File</h3>
+<pre><code><span class="comment">-- Save to a different file</span>
+config.save_to (<span class="string">"config.production.json"</span>)</code></pre>
+
+            <h3>Export as JSON String</h3>
+<pre><code><span class="comment">-- Compact JSON</span>
+print (config.to_json)
+
+<span class="comment">-- Pretty-printed JSON</span>
+print (config.to_json_pretty)</code></pre>
+        </section>
+
+        <section id="merging">
+            <h2>Merging Configuration Files</h2>
+
+            <h3>Environment Overrides</h3>
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="comment">-- Load base configuration</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+
+    <span class="comment">-- Merge environment-specific overrides</span>
+    config.merge_file (<span class="string">"config.production.json"</span>)
+
+    <span class="comment">-- Values from production override base values</span>
+<span class="keyword">end</span></code></pre>
+
+            <h3>Merge Strategy</h3>
+            <p>The merge operation:</p>
+            <ul>
+                <li>Overwrites existing keys with new values</li>
+                <li>Adds new keys that don't exist</li>
+                <li>Preserves keys not in the merged file</li>
+            </ul>
+        </section>
+
+        <section id="checking-keys">
+            <h2>Checking for Keys</h2>
+
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
+
+    <span class="comment">-- Check if key exists (supports dot notation)</span>
+    <span class="keyword">if</span> config.has_key (<span class="string">"database.host"</span>) <span class="keyword">then</span>
+        print (<span class="string">"Database host is configured%N"</span>)
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> <span class="keyword">not</span> config.has_key (<span class="string">"cache.enabled"</span>) <span class="keyword">then</span>
+        print (<span class="string">"Cache not configured, using defaults%N"</span>)
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="best-practices">
+            <h2>Best Practices</h2>
+
+            <h3>1. Use Environment Fallback for Sensitive Data</h3>
+<pre><code><span class="comment">-- Never store passwords in config files</span>
+password := config.string_value_or_env_or_default (
+    <span class="string">"database.password"</span>,
+    <span class="string">"DB_PASSWORD"</span>,
+    <span class="string">""</span>
+)</code></pre>
+
+            <h3>2. Provide Sensible Defaults</h3>
+<pre><code><span class="comment">-- Always have fallback values for optional settings</span>
+timeout := config.integer_value_or_default (<span class="string">"network.timeout"</span>, 30)
+retries := config.integer_value_or_default (<span class="string">"network.retries"</span>, 3)</code></pre>
+
+            <h3>3. Validate Required Configuration</h3>
+<pre><code><span class="keyword">if</span> <span class="keyword">not</span> config.has_key (<span class="string">"database.host"</span>) <span class="keyword">then</span>
+    print (<span class="string">"Error: database.host is required%N"</span>)
+    <span class="keyword">die</span> (1)
+<span class="keyword">end</span></code></pre>
+
+            <h3>4. Use Sections for Organization</h3>
+<pre><code><span class="comment">-- Pass sections to subsystems</span>
+<span class="keyword">if</span> <span class="keyword">attached</span> config.section (<span class="string">"database"</span>) <span class="keyword">as</span> db_config <span class="keyword">then</span>
+    database.configure (db_config)
+<span class="keyword">end</span></code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 simple_* ecosystem. MIT License.</p>
+        <p>
+            <a href="https://github.com/simple-eiffel/simple_config">GitHub</a> |
+            <a href="https://simple-eiffel.github.io">Documentation</a>
+        </p>
+    </footer>
+</body>
+</html>

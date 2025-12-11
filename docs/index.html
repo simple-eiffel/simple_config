@@ -3,76 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIMPLE_CONFIG - Documentation</title>
+    <title>simple_config - JSON Configuration for Eiffel</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
-        <h1>SIMPLE_CONFIG</h1>
-        <p>Simple JSON-based configuration management</p>
+        <div class="logo-container">
+            <img src="https://raw.githubusercontent.com/simple-eiffel/claude_eiffel_op_docs/main/artwork/LOGO.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_config</h1>
+        <p class="tagline">JSON-Based Configuration Management for Eiffel</p>
+        <div class="badges">
+            <span class="badge badge-version">v1.0.0</span>
+            <span class="badge badge-license">MIT</span>
+        </div>
     </header>
 
     <nav>
-        <a href="#overview">Overview</a>
-        <a href="#quick-start">Quick Start</a>
-        <a href="#api">API Reference</a>
-        <a href="https://github.com/simple-eiffel/simple_config">GitHub</a>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_config">GitHub</a></li>
+        </ul>
     </nav>
 
     <main>
         <section id="overview">
             <h2>Overview</h2>
-            <p>SIMPLE_CONFIG provides easy JSON-based configuration for Eiffel applications with dot-notation access and environment variable support.</p>
-
-            <h3>Key Features</h3>
-            <ul>
-                <li>JSON configuration files</li>
-                <li>Dot-notation access (database.host)</li>
-                <li>Environment variable fallback</li>
-                <li>Type-safe access</li>
-                <li>Nested sections</li>
-                <li>Config file merging</li>
-            </ul>
+            <p>
+                <strong>simple_config</strong> provides easy JSON-based configuration for Eiffel applications
+                with dot-notation access and environment variable support.
+            </p>
+            <p>
+                Part of the <a href="https://github.com/simple-eiffel">Simple Eiffel</a> ecosystem.
+            </p>
         </section>
 
         <section id="quick-start">
             <h2>Quick Start</h2>
-            <pre><code>&lt;library name="simple_config" location="$SIMPLE_CONFIG/simple_config.ecf"/&gt;</code></pre>
+
+            <h3>Installation</h3>
+            <ol>
+                <li>Set the environment variable:
+<pre><code>export SIMPLE_CONFIG=/path/to/simple_config</code></pre>
+                </li>
+                <li>Add to your ECF file:
+<pre><code>&lt;library name="simple_config" location="$SIMPLE_CONFIG/simple_config.ecf"/&gt;</code></pre>
+                </li>
+            </ol>
 
             <h3>config.json</h3>
-            <pre><code>{
-  "database": {
-    "host": "localhost",
-    "port": 5432,
-    "name": "mydb"
-  },
-  "features": {
-    "debug": true,
-    "cache_size": 1024
-  }
+<pre><code>{
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "mydb"
+    },
+    "features": {
+        "debug": true,
+        "cache_size": 1024
+    }
 }</code></pre>
 
             <h3>Usage</h3>
-            <pre><code>local
-    config: SIMPLE_CONFIG
-do
-    create config.make_with_file ("config.json")
+<pre><code><span class="keyword">local</span>
+    config: <span class="type">SIMPLE_CONFIG</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> config.make_with_file (<span class="string">"config.json"</span>)
 
-    -- Dot notation access
-    print (config.string_value ("database.host"))
-    print (config.integer_value ("database.port"))
-    print (config.boolean_value ("features.debug"))
+    <span class="comment">-- Dot notation access</span>
+    print (config.string_value (<span class="string">"database.host"</span>))
+    print (config.integer_value (<span class="string">"database.port"</span>))
+    print (config.boolean_value (<span class="string">"features.debug"</span>))
 
-    -- With defaults and env vars
-    port := config.integer_value_or_env ("database.port", "DB_PORT", 5432)
-end</code></pre>
+    <span class="comment">-- With defaults and env vars</span>
+    port := config.integer_value_or_env (<span class="string">"database.port"</span>, <span class="string">"DB_PORT"</span>, 5432)
+<span class="keyword">end</span></code></pre>
         </section>
 
-        <section id="api">
-            <h2>API Reference</h2>
+        <section id="features">
+            <h2>Key Features</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>Dot Notation</h3>
+                    <p>Access nested values: "database.host" navigates JSON structure.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Environment Fallback</h3>
+                    <p>Config values can fall back to environment variables.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Type-Safe Access</h3>
+                    <p>String, integer, boolean, real, and array accessors.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>File Merging</h3>
+                    <p>Merge multiple config files for environment overrides.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="api-summary">
+            <h2>API Summary</h2>
 
             <h3>Loading</h3>
-            <table>
+            <table class="api-table">
                 <tr><th>Feature</th><th>Description</th></tr>
                 <tr><td><code>make</code></td><td>Create empty config</td></tr>
                 <tr><td><code>make_with_file (path)</code></td><td>Load from JSON file</td></tr>
@@ -81,7 +120,7 @@ end</code></pre>
             </table>
 
             <h3>String Access</h3>
-            <table>
+            <table class="api-table">
                 <tr><th>Feature</th><th>Description</th></tr>
                 <tr><td><code>string_value (key)</code></td><td>Get string</td></tr>
                 <tr><td><code>string_value_or_default (key, default)</code></td><td>Get with default</td></tr>
@@ -89,7 +128,7 @@ end</code></pre>
             </table>
 
             <h3>Other Types</h3>
-            <table>
+            <table class="api-table">
                 <tr><th>Feature</th><th>Description</th></tr>
                 <tr><td><code>integer_value (key)</code></td><td>Get integer</td></tr>
                 <tr><td><code>boolean_value (key)</code></td><td>Get boolean</td></tr>
@@ -99,7 +138,7 @@ end</code></pre>
             </table>
 
             <h3>Modification</h3>
-            <table>
+            <table class="api-table">
                 <tr><th>Feature</th><th>Description</th></tr>
                 <tr><td><code>set_string (key, value)</code></td><td>Set string value</td></tr>
                 <tr><td><code>set_integer (key, value)</code></td><td>Set integer value</td></tr>
@@ -108,11 +147,24 @@ end</code></pre>
                 <tr><td><code>save_to (path)</code></td><td>Save to new file</td></tr>
             </table>
         </section>
+
+        <section id="documentation">
+            <h2>Documentation</h2>
+            <ul class="doc-links">
+                <li><a href="user-guide.html"><strong>User Guide</strong></a> - Complete tutorial with examples</li>
+                <li><a href="api-reference.html"><strong>API Reference</strong></a> - Full API with contracts</li>
+                <li><a href="architecture.html"><strong>Architecture</strong></a> - Internal design and rationale</li>
+                <li><a href="cookbook.html"><strong>Cookbook</strong></a> - Ready-to-use recipes and patterns</li>
+            </ul>
+        </section>
     </main>
 
     <footer>
-        <p>&copy; 2024-2025 Larry Rix. MIT License.</p>
-        <p><a href="https://github.com/simple-eiffel/simple_config">GitHub</a></p>
+        <p>&copy; 2025 simple_* ecosystem. MIT License.</p>
+        <p>
+            <a href="https://github.com/simple-eiffel/simple_config">GitHub</a> |
+            <a href="https://simple-eiffel.github.io">Documentation</a>
+        </p>
     </footer>
 </body>
 </html>
