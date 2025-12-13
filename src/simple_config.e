@@ -414,7 +414,7 @@ feature -- File operations
 		do
 			if not file_path.is_empty then
 				create l_json
-				if attached l_json.parse_file (file_path.to_string_32) as l_val then
+				if attached l_json.load_config (file_path.to_string_32) as l_val then
 					if attached l_val.as_object as l_obj then
 						data := l_obj
 						is_modified := False
@@ -432,7 +432,7 @@ feature -- File operations
 			l_other: detachable SIMPLE_JSON_OBJECT
 		do
 			create l_json
-			if attached l_json.parse_file (a_file_path.to_string_32) as l_val then
+			if attached l_json.load_config (a_file_path.to_string_32) as l_val then
 				l_other := l_val.as_object
 				if attached l_other as other then
 					merge_objects (data, other)
