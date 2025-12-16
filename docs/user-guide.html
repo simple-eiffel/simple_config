@@ -36,14 +36,13 @@
             <h2>Installation</h2>
 
             <h3>1. Set Environment Variable</h3>
-<pre><code>export SIMPLE_CONFIG=/path/to/simple_config</code></pre>
+<pre><code>export SIMPLE_EIFFEL=/d/prod</code></pre>
 
             <h3>2. Add to ECF</h3>
-<pre><code>&lt;library name="simple_config" location="$SIMPLE_CONFIG/simple_config.ecf"/&gt;</code></pre>
+<pre><code>&lt;library name="simple_config" location="$SIMPLE_EIFFEL/simple_config/simple_config.ecf"/&gt;</code></pre>
 
             <h3>3. Dependencies</h3>
-            <p>simple_config uses simple_json internally. Ensure SIMPLE_JSON is also configured:</p>
-<pre><code>export SIMPLE_JSON=/path/to/simple_json</code></pre>
+            <p>simple_config uses simple_json internally. With SIMPLE_EIFFEL set, all dependencies are automatically resolved.</p>
         </section>
 
         <section id="config-files">

@@ -45,14 +45,14 @@ end
 
 ## Installation
 
-1. Set environment variable:
+1. Set environment variable (one-time setup for all simple_* libraries):
 ```bash
-export SIMPLE_CONFIG=/path/to/simple_config
+export SIMPLE_EIFFEL=D:\prod
 ```
 
 2. Add to ECF:
 ```xml
-<library name="simple_config" location="$SIMPLE_CONFIG/simple_config.ecf"/>
+<library name="simple_config" location="$SIMPLE_EIFFEL/simple_config/simple_config.ecf"/>
 ```
 
 ## Dependencies
