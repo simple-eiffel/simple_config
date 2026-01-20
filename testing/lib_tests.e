@@ -196,4 +196,33 @@ feature -- Tests
 			assert_string_contains ("has quotes", l_json, "%"name%"")
 		end
 
+	test_factory_support
+			-- Test factory support features (_type convention).
+		local
+			cfg, section: SIMPLE_CONFIG
+		do
+			create cfg.make
+			create section.make
+			section.set_string ("_type", "database_config")
+			section.set_string ("host", "localhost")
+			section.set_integer ("port", 5432)
+			cfg.set_section ("database", section)
+
+			-- Test has_section_type
+			assert_true ("has section type", cfg.has_section_type ("database"))
+			assert_false ("no type for missing", cfg.has_section_type ("missing"))
+
+			-- Test section_type
+			if attached cfg.section_type ("database") as t then
+				assert_equal ("section type correct", "database_config", t)
+			else
+				assert_true ("section type attached", False)
+			end
+			assert_void ("no type for top-level", cfg.section_type ("database.host"))
+
+			-- Test type_specification_at
+			assert_equal ("type spec", "database_config", cfg.type_specification_at ("database"))
+			assert_string_empty ("type spec empty for missing", cfg.type_specification_at ("missing"))
+		end
+
 end

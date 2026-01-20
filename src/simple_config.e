@@ -473,6 +473,42 @@ feature -- File operations
 			not_modified: not is_modified
 		end
 
+feature -- Factory Support
+
+	section_type (a_key: STRING): detachable STRING
+			-- Get the "_type" field value from section at `a_key'.
+			-- Useful for determining which factory type to use.
+			-- Convention: config sections can have a "_type" field to specify
+			-- which factory-registered type to create.
+		require
+			key_not_empty: not a_key.is_empty
+		do
+			Result := string_value (a_key + "._type")
+		end
+
+	has_section_type (a_key: STRING): BOOLEAN
+			-- Does section at `a_key' have a "_type" field?
+		require
+			key_not_empty: not a_key.is_empty
+		do
+			Result := has_key (a_key + "._type")
+		end
+
+	type_specification_at (a_key: STRING): STRING
+			-- Get type specification at `a_key' for factory lookup.
+			-- Returns content of "_type" field if present, empty string otherwise.
+		require
+			key_not_empty: not a_key.is_empty
+		do
+			if attached section_type (a_key) as t then
+				Result := t
+			else
+				create Result.make_empty
+			end
+		ensure
+			result_exists: Result /= Void
+		end
+
 feature -- Output
 
 	to_json: STRING

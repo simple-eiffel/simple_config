@@ -30,6 +30,7 @@ feature {NONE} -- Initialization
 			run_test (agent tests.test_typed_arrays, "test_typed_arrays")
 			run_test (agent tests.test_environment_fallback, "test_environment_fallback")
 			run_test (agent tests.test_pretty_print, "test_pretty_print")
+			run_test (agent tests.test_factory_support, "test_factory_support")
 
 			print ("%N========================%N")
 			print ("Results: " + passed.out + " passed, " + failed.out + " failed%N")
