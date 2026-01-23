@@ -1,5 +1,6 @@
 note
 	description: "Simple JSON-based configuration file management"
+	ca_ignore: "CA033"
 	author: "Larry Rix"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -26,6 +27,10 @@ feature {NONE} -- Initialization
 			file_path := ""
 			is_modified := False
 			create env
+		ensure
+			empty_config: keys_model.is_empty
+			empty_path: file_path.is_empty
+			not_modified: not is_modified
 		end
 
 	make_with_file (a_file_path: STRING)
@@ -36,6 +41,8 @@ feature {NONE} -- Initialization
 			make
 			file_path := a_file_path
 			load
+		ensure
+			path_set: file_path = a_file_path
 		end
 
 feature -- Access
@@ -45,6 +52,30 @@ feature -- Access
 
 	is_modified: BOOLEAN
 			-- Has configuration been modified since last save?
+
+feature -- Model queries
+
+	keys_model: MML_SET [STRING]
+			-- Mathematical model of all top-level keys in config.
+		local
+			l_keys: ARRAY [STRING_32]
+			i: INTEGER
+		do
+			create Result
+			l_keys := data.keys
+			from
+				i := l_keys.lower
+			until
+				i > l_keys.upper
+			loop
+				Result := Result & l_keys.item (i).to_string_8
+				i := i + 1
+			end
+		ensure
+			result_exists: Result /= Void
+		end
+
+feature -- Access (continued)
 
 	has_key (a_key: STRING): BOOLEAN
 			-- Does configuration have `a_key'?
@@ -339,6 +370,8 @@ feature -- Element change
 			is_modified := True
 		ensure
 			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
 		end
 
 	set_integer (a_key: STRING; a_value: INTEGER)
@@ -352,6 +385,8 @@ feature -- Element change
 			is_modified := True
 		ensure
 			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
 		end
 
 	set_boolean (a_key: STRING; a_value: BOOLEAN)
@@ -365,6 +400,8 @@ feature -- Element change
 			is_modified := True
 		ensure
 			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
 		end
 
 	set_real (a_key: STRING; a_value: DOUBLE)
@@ -378,13 +415,15 @@ feature -- Element change
 			is_modified := True
 		ensure
 			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
 		end
 
 	set_section (a_key: STRING; a_section: SIMPLE_CONFIG)
 			-- Set nested section for `a_key'.
+			-- Note: Redundant `a_section /= Void' precondition removed (attached type guarantees non-void).
 		require
 			key_not_empty: not a_key.is_empty
-			section_not_void: a_section /= Void
 		local
 			l_ignore: SIMPLE_JSON_OBJECT
 		do
@@ -392,6 +431,8 @@ feature -- Element change
 			is_modified := True
 		ensure
 			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
 		end
 
 	remove (a_key: STRING)
@@ -403,6 +444,8 @@ feature -- Element change
 			is_modified := True
 		ensure
 			modified: is_modified
+			key_removed: not keys_model [a_key]
+			keys_shrunk_or_equal: keys_model <= old keys_model
 		end
 
 feature -- File operations
@@ -598,6 +641,11 @@ feature {NONE} -- Merge
 				i := i + 1
 			end
 		end
+
+invariant
+	data_exists: data /= Void
+	env_exists: env /= Void
+	file_path_exists: file_path /= Void
 
 note
 	copyright: "Copyright (c) 2024-2025, Larry Rix"
