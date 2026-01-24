@@ -1,0 +1,750 @@
+note
+	description: "Simple JSON-based configuration file management"
+	ca_ignore: "CA033"
+	author: "Larry Rix"
+	date: "$Date$"
+	revision: "$Revision$"
+
+class interface
+	SIMPLE_CONFIG
+
+create 
+	make
+			-- Create empty configuration.
+		ensure
+			empty_config: keys_model.is_empty
+			empty_path: file_path.is_empty
+			not_modified: not is_modified
+
+	make_with_file (a_file_path: STRING_8)
+			-- Create configuration from file.
+		require
+			path_not_empty: not a_file_path.is_empty
+		ensure
+			path_set: file_path = a_file_path
+
+feature -- Access
+
+	file_path: STRING_8
+			-- Path to configuration file
+
+	generating_type: TYPE [detachable SIMPLE_CONFIG]
+			-- Type of current object
+			-- (type of which it is a direct instance)
+			-- (from ANY)
+		ensure -- from ANY
+			generating_type_not_void: Result /= Void
+
+	generator: STRING_8
+			-- Name of current object's generating class
+			-- (base class of the type of which it is a direct instance)
+			-- (from ANY)
+		ensure -- from ANY
+			generator_not_void: Result /= Void
+			generator_not_empty: not Result.is_empty
+
+	is_modified: BOOLEAN
+			-- Has configuration been modified since last save?
+	
+feature -- Comparison
+
+	frozen deep_equal (a: detachable ANY; b: like arg #1): BOOLEAN
+			-- Are `a` and `b` either both void
+			-- or attached to isomorphic object structures?
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+			shallow_implies_deep: standard_equal (a, b) implies Result
+			both_or_none_void: (a = Void) implies (Result = (b = Void))
+			same_type: (Result and (a /= Void)) implies (b /= Void and then a.same_type (b))
+			symmetric: Result implies deep_equal (b, a)
+
+	frozen equal (a: detachable ANY; b: like arg #1): BOOLEAN
+			-- Are `a` and `b` either both void or attached
+			-- to objects considered equal?
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+			definition: Result = (a = Void and b = Void) or else ((a /= Void and b /= Void) and then a.is_equal (b))
+
+	frozen is_deep_equal alias "≡≡≡" (other: SIMPLE_CONFIG): BOOLEAN
+			-- Are `Current` and `other` attached to isomorphic object structures?
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+		ensure -- from ANY
+			shallow_implies_deep: standard_is_equal (other) implies Result
+			same_type: Result implies same_type (other)
+			symmetric: Result implies other.is_deep_equal (Current)
+
+	is_equal (other: SIMPLE_CONFIG): BOOLEAN
+			-- Is `other` attached to an object considered
+			-- equal to current object?
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+		ensure -- from ANY
+			symmetric: Result implies other ~ Current
+			consistent: standard_is_equal (other) implies Result
+
+	frozen standard_equal (a: detachable ANY; b: like arg #1): BOOLEAN
+			-- Are `a` and `b` either both void or attached to
+			-- field-by-field identical objects of the same type?
+			-- Always uses default object comparison criterion.
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+			definition: Result = (a = Void and b = Void) or else ((a /= Void and b /= Void) and then a.standard_is_equal (b))
+
+	frozen standard_is_equal alias "≜" (other: SIMPLE_CONFIG): BOOLEAN
+			-- Is `other` attached to an object of the same type
+			-- as current object, and field-by-field identical to it?
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+		ensure -- from ANY
+			same_type: Result implies same_type (other)
+			symmetric: Result implies other.standard_is_equal (Current)
+	
+feature -- Status report
+
+	conforms_to (other: ANY): BOOLEAN
+			-- Does type of current object conform to type
+			-- of `other` (as per Eiffel: The Language, chapter 13)?
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+
+	same_type (other: ANY): BOOLEAN
+			-- Is type of current object identical to type of `other`?
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+		ensure -- from ANY
+			definition: Result = (conforms_to (other) and other.conforms_to (Current))
+	
+feature -- Element change
+
+	remove (a_key: STRING_8)
+			-- Remove value for `a_key`.
+		require
+			key_not_empty: not a_key.is_empty
+		ensure
+			modified: is_modified
+			key_removed: not keys_model [a_key]
+			keys_shrunk_or_equal: keys_model <= old keys_model
+
+	set_boolean (a_key: STRING_8; a_value: BOOLEAN)
+			-- Set boolean value for `a_key`.
+		require
+			key_not_empty: not a_key.is_empty
+		ensure
+			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
+
+	set_integer (a_key: STRING_8; a_value: INTEGER_32)
+			-- Set integer value for `a_key`.
+		require
+			key_not_empty: not a_key.is_empty
+		ensure
+			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
+
+	set_real (a_key: STRING_8; a_value: REAL_64)
+			-- Set real value for `a_key`.
+		require
+			key_not_empty: not a_key.is_empty
+		ensure
+			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
+
+	set_section (a_key: STRING_8; a_section: SIMPLE_CONFIG)
+			-- Set nested section for `a_key`.
+			-- Note: Redundant `a_section /= Void` precondition removed (attached type guarantees non-void).
+		require
+			key_not_empty: not a_key.is_empty
+		ensure
+			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
+
+	set_string (a_key, a_value: STRING_8)
+			-- Set string value for `a_key`.
+			-- Note: Does NOT support dot notation for setting (use sections).
+		require
+			key_not_empty: not a_key.is_empty
+		ensure
+			modified: is_modified
+			key_present: keys_model [a_key]
+			keys_extended: keys_model >= old keys_model
+	
+feature -- Duplication
+
+	copy (other: SIMPLE_CONFIG)
+			-- Update current object using fields of object attached
+			-- to `other`, so as to yield equal objects.
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+			type_identity: same_type (other)
+		ensure -- from ANY
+			is_equal: Current ~ other
+
+	frozen deep_copy (other: SIMPLE_CONFIG)
+			-- Effect equivalent to that of:
+			--		`copy` (`other` . `deep_twin`)
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+		ensure -- from ANY
+			deep_equal: deep_equal (Current, other)
+
+	frozen deep_twin: SIMPLE_CONFIG
+			-- New object structure recursively duplicated from Current.
+			-- (from ANY)
+		ensure -- from ANY
+			deep_twin_not_void: Result /= Void
+			deep_equal: deep_equal (Current, Result)
+
+	frozen standard_copy (other: SIMPLE_CONFIG)
+			-- Copy every field of `other` onto corresponding field
+			-- of current object.
+			-- (from ANY)
+		require -- from ANY
+			other_not_void: other /= Void
+			type_identity: same_type (other)
+		ensure -- from ANY
+			is_standard_equal: standard_is_equal (other)
+
+	frozen standard_twin: SIMPLE_CONFIG
+			-- New object field-by-field identical to `other`.
+			-- Always uses default copying semantics.
+			-- (from ANY)
+		ensure -- from ANY
+			standard_twin_not_void: Result /= Void
+			equal: standard_equal (Result, Current)
+
+	frozen twin: SIMPLE_CONFIG
+			-- New object equal to `Current`
+			-- `twin` calls `copy`; to change copying/twinning semantics, redefine `copy`.
+			-- (from ANY)
+		ensure -- from ANY
+			twin_not_void: Result /= Void
+			is_equal: Result ~ Current
+	
+feature -- Basic operations
+
+	frozen default: detachable SIMPLE_CONFIG
+			-- Default value of object's type
+			-- (from ANY)
+
+	frozen default_pointer: POINTER
+			-- Default value of type `POINTER`
+			-- (Avoid the need to write `p`.`default` for
+			-- some `p` of type `POINTER`.)
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+
+	default_rescue
+			-- Process exception for routines with no Rescue clause.
+			-- (Default: do nothing.)
+			-- (from ANY)
+
+	frozen do_nothing
+			-- Execute a null action.
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+	
+feature -- Access (continued)
+
+	has_key (a_key: STRING_8): BOOLEAN
+			-- Does configuration have `a_key`?
+			-- Supports dot notation: "database.host"
+		require
+			key_not_empty: not a_key.is_empty
+	
+feature -- Array access
+
+	integer_list (a_key: STRING_8): ARRAYED_LIST [INTEGER_32]
+			-- Get array of integers for `a_key`.
+			-- Supports dot notation.
+		require
+			key_not_empty: not a_key.is_empty
+
+	real_list (a_key: STRING_8): ARRAYED_LIST [REAL_64]
+			-- Get array of reals for `a_key`.
+			-- Supports dot notation.
+		require
+			key_not_empty: not a_key.is_empty
+
+	string_list (a_key: STRING_8): ARRAYED_LIST [STRING_8]
+			-- Get array of strings for `a_key`.
+			-- Supports dot notation.
+		require
+			key_not_empty: not a_key.is_empty
+	
+feature -- Boolean access
+
+	boolean_value (a_key: STRING_8): BOOLEAN
+			-- Get boolean value for `a_key` (False if not found).
+			-- Supports dot notation.
+		require
+			key_not_empty: not a_key.is_empty
+
+	boolean_value_or_default (a_key: STRING_8; a_default: BOOLEAN): BOOLEAN
+			-- Get boolean value for `a_key`, or `a_default` if not found.
+		require
+			key_not_empty: not a_key.is_empty
+	
+feature -- Factory Support
+
+	has_section_type (a_key: STRING_8): BOOLEAN
+			-- Does section at `a_key` have a "_type" field?
+		require
+			key_not_empty: not a_key.is_empty
+
+	section_type (a_key: STRING_8): detachable STRING_8
+			-- Get the "_type" field value from section at `a_key`.
+			-- Useful for determining which factory type to use.
+			-- Convention: config sections can have a "_type" field to specify
+			-- which factory-registered type to create.
+		require
+			key_not_empty: not a_key.is_empty
+
+	type_specification_at (a_key: STRING_8): STRING_8
+			-- Get type specification at `a_key` for factory lookup.
+			-- Returns content of "_type" field if present, empty string otherwise.
+		require
+			key_not_empty: not a_key.is_empty
+		ensure
+			result_exists: Result /= Void
+	
+feature -- File operations
+
+	load
+			-- Load configuration from file.
+
+	merge_file (a_file_path: STRING_8)
+			-- Merge another config file, overriding existing values.
+		require
+			path_not_empty: not a_file_path.is_empty
+
+	save
+			-- Save configuration to file.
+		require
+			has_file_path: not file_path.is_empty
+		ensure
+			not_modified: not is_modified
+
+	save_to (a_file_path: STRING_8)
+			-- Save configuration to specified file.
+		require
+			path_not_empty: not a_file_path.is_empty
+		ensure
+			path_set: file_path = a_file_path
+			not_modified: not is_modified
+	
+feature -- Integer access
+
+	integer_value (a_key: STRING_8): INTEGER_32
+			-- Get integer value for `a_key` (0 if not found).
+			-- Supports dot notation.
+		require
+			key_not_empty: not a_key.is_empty
+
+	integer_value_or_default (a_key: STRING_8; a_default: INTEGER_32): INTEGER_32
+			-- Get integer value for `a_key`, or `a_default` if not found.
+		require
+			key_not_empty: not a_key.is_empty
+
+	integer_value_or_env (a_key, a_env_var: STRING_8; a_default: INTEGER_32): INTEGER_32
+			-- Get integer from config, or parse from env var, or use default.
+		require
+			key_not_empty: not a_key.is_empty
+			env_var_not_empty: not a_env_var.is_empty
+	
+feature -- JSON Escape Sequences
+
+	Hex_padding_zero: STRING_32 = "0"
+			-- Zero character used for padding hex strings
+			-- Ensures 4-digit format for Unicode escapes
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_backslash: STRING_32 = "\\"
+			-- Escaped backslash: \\
+			-- Used when outputting backslash within JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_backspace: STRING_32 = "\b"
+			-- Escaped backspace: \b
+			-- Used for backspace characters in JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_formfeed: STRING_32 = "\f"
+			-- Escaped form feed: \f
+			-- Used for form feed characters in JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_newline: STRING_32 = "\n"
+			-- Escaped newline: \n
+			-- Used for newline characters in JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_quote: STRING_32 = "\%""
+			-- Escaped double quote: \"
+			-- Used when outputting quotes within JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_return: STRING_32 = "\r"
+			-- Escaped carriage return: \r
+			-- Used for carriage return characters in JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_tab: STRING_32 = "\t"
+			-- Escaped tab: \t
+			-- Used for tab characters in JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_escape_unicode_prefix: STRING_32 = "\u"
+			-- Unicode escape sequence prefix: \u
+			-- Followed by 4 hex digits for Unicode code point
+			-- (from SIMPLE_JSON_CONSTANTS)
+	
+feature -- JSON Formatting Strings
+
+	Default_two_space_indent: STRING_32 = "  "
+			-- Standard two-space indentation for JSON pretty printing
+			-- Most common indentation style for JSON
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_close_brace: STRING_32 = "}"
+			-- Closing brace for JSON objects
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_close_bracket: STRING_32 = "]"
+			-- Closing bracket for JSON arrays
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_colon_space: STRING_32 = ": "
+			-- Standard separator between key and value in JSON objects
+			-- Format: "key": value
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_comma: STRING_32 = ","
+			-- Comma separator for array elements and object properties
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_empty_array: STRING_32 = "[]"
+			-- String representation of empty JSON array
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_empty_object: STRING_32 = "{}"
+			-- String representation of empty JSON object
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_false: STRING_32 = "false"
+			-- JSON boolean false literal
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_null_literal: STRING_32 = "null"
+			-- JSON null literal
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_open_brace: STRING_32 = "{"
+			-- Opening brace for JSON objects
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_open_bracket: STRING_32 = "["
+			-- Opening bracket for JSON arrays
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_quote: STRING_32 = "%""
+			-- Double quote character for JSON strings
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_true: STRING_32 = "true"
+			-- JSON boolean true literal
+			-- (from SIMPLE_JSON_CONSTANTS)
+	
+feature -- JSON Schema Keywords
+
+	Schema_keyword_items: STRING_32 = "items"
+			-- JSON Schema keyword for array item schema
+			-- Example: {"items": {"type": "number"}}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_max_items: STRING_32 = "maxItems"
+			-- JSON Schema keyword for maximum array length
+			-- Example: {"maxItems": 100}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_max_length: STRING_32 = "maxLength"
+			-- JSON Schema keyword for maximum string length
+			-- Example: {"maxLength": 255}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_maximum: STRING_32 = "maximum"
+			-- JSON Schema keyword for maximum numeric value
+			-- Example: {"maximum": 100}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_min_items: STRING_32 = "minItems"
+			-- JSON Schema keyword for minimum array length
+			-- Example: {"minItems": 1}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_min_length: STRING_32 = "minLength"
+			-- JSON Schema keyword for minimum string length
+			-- Example: {"minLength": 1}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_minimum: STRING_32 = "minimum"
+			-- JSON Schema keyword for minimum numeric value
+			-- Example: {"minimum": 0}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_pattern: STRING_32 = "pattern"
+			-- JSON Schema keyword for regex pattern matching
+			-- Example: {"pattern": "^[0-9]+$"}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_properties: STRING_32 = "properties"
+			-- JSON Schema keyword for object property definitions
+			-- Example: {"properties": {"name": {"type": "string"}}}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_required: STRING_32 = "required"
+			-- JSON Schema keyword for required properties array
+			-- Example: {"required": ["name", "email"]}
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Schema_keyword_type: STRING_32 = "type"
+			-- JSON Schema keyword for specifying value type
+			-- Example: {"type": "string"}
+			-- (from SIMPLE_JSON_CONSTANTS)
+	
+feature -- JSON Type Keywords
+
+	Json_type_array: STRING_32 = "array"
+			-- JSON type name for array values
+			-- Used in schema type validation
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_type_integer: STRING_32 = "integer"
+			-- JSON type name for integer values
+			-- Used in schema type validation
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_type_null: STRING_32 = "null"
+			-- JSON type name for null values
+			-- Used in schema type validation
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_type_number: STRING_32 = "number"
+			-- JSON type name for numeric values
+			-- Used in schema type validation
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_type_object: STRING_32 = "object"
+			-- JSON type name for object values
+			-- Used in schema type validation
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Json_type_string: STRING_32 = "string"
+			-- JSON type name for string values
+			-- Used in schema type validation
+			-- (from SIMPLE_JSON_CONSTANTS)
+	
+feature -- Model queries
+
+	keys_model: MML_SET [STRING_8]
+			-- Mathematical model of all top-level keys in config.
+		ensure
+			result_exists: Result /= Void
+	
+feature -- Output
+
+	Io: STD_FILES
+			-- Handle to standard file setup
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+			io_not_void: Result /= Void
+
+	out: STRING_8
+			-- New string containing terse printable representation
+			-- of current object
+			-- (from ANY)
+		ensure -- from ANY
+			out_not_void: Result /= Void
+
+	print (o: detachable ANY)
+			-- Write terse external representation of `o`
+			-- on standard output.
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+
+	frozen tagged_out: STRING_8
+			-- New string containing terse printable representation
+			-- of current object
+			-- (from ANY)
+		ensure -- from ANY
+			tagged_out_not_void: Result /= Void
+
+	to_json: STRING_8
+			-- Convert configuration to compact JSON string.
+
+	to_json_pretty: STRING_8
+			-- Convert configuration to formatted JSON string.
+	
+feature -- Platform
+
+	Operating_environment: OPERATING_ENVIRONMENT
+			-- Objects available from the operating system
+			-- (from ANY)
+		ensure -- from ANY
+			instance_free: class
+			operating_environment_not_void: Result /= Void
+	
+feature -- Real access
+
+	real_value (a_key: STRING_8): REAL_64
+			-- Get real value for `a_key` (0.0 if not found).
+			-- Supports dot notation.
+		require
+			key_not_empty: not a_key.is_empty
+
+	real_value_or_default (a_key: STRING_8; a_default: REAL_64): REAL_64
+			-- Get real value for `a_key`, or `a_default` if not found.
+		require
+			key_not_empty: not a_key.is_empty
+	
+feature -- Section access
+
+	section (a_key: STRING_8): detachable SIMPLE_CONFIG
+			-- Get nested section for `a_key`.
+			-- Supports dot notation.
+		require
+			key_not_empty: not a_key.is_empty
+	
+feature -- Size and Buffer Constants
+
+	Default_elements_capacity: INTEGER_32 = 10
+			-- Default initial capacity for element lists in streaming operations
+			-- Provides reasonable starting size for most JSON arrays
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Default_error_list_size: INTEGER_32 = 5
+			-- Default initial capacity for error lists in streaming and simple operations
+			-- Used when creating error containers that typically have few errors
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Default_errors_capacity: INTEGER_32 = 10
+			-- Default initial capacity for error lists in schema validation
+			-- Used for operations that may generate multiple validation errors
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Default_path_segments_capacity: INTEGER_32 = 5
+			-- Default initial capacity for path segment arrays
+			-- Most JSON paths have relatively few segments
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Error_message_buffer_size: INTEGER_32 = 50
+			-- Standard buffer size for constructing error messages
+			-- Provides sufficient space for most error message strings
+			-- Used in schema validation error construction
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Item_path_buffer_size: INTEGER_32 = 20
+			-- Buffer size for item path construction in schema validation
+			-- Used when building paths for nested schema validation
+			-- (from SIMPLE_JSON_CONSTANTS)
+	
+feature -- String Processing Constants
+
+	Ascii_control_char_boundary: INTEGER_32 = 32
+			-- ASCII code boundary for control characters (0x00-0x1F)
+			-- Characters with code < 32 are control characters requiring escape
+			-- Character code 32 is space (first printable ASCII character)
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Hex_digit_count: INTEGER_32 = 4
+			-- Number of hex digits required for Unicode escape sequences (\uXXXX)
+			-- JSON standard requires exactly 4 hex digits for Unicode escapes
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Hex_last_four_offset: INTEGER_32 = 3
+			-- Offset for extracting last 4 characters from hex string
+			-- substring(count - 3, count) gives the last 4 characters
+			-- Used when padding hex strings to ensure 4-digit format
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Max_reasonable_indent_count: INTEGER_32 = 8
+			-- Maximum reasonable number of spaces for indentation
+			-- Prevents excessive indentation that would harm readability
+			-- Typical values: 2, 4, or 8 spaces
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Position_prefix_length: INTEGER_32 = 11
+			-- Length of the string "(position: " used in error messages
+			-- Used to calculate string offsets when extracting position information
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Substring_skip_first_char: INTEGER_32 = 2
+			-- Offset to skip first character in substring operations
+			-- Used when removing leading slash from JSON Pointer paths
+			-- substring(2, count) skips the first character
+			-- (from SIMPLE_JSON_CONSTANTS)
+
+	Substring_skip_first_two_chars: INTEGER_32 = 3
+			-- Offset to skip first two characters in substring operations
+			-- Used when removing array bracket markers like "[-"
+			-- substring(3, count) skips the first two characters
+			-- (from SIMPLE_JSON_CONSTANTS)
+	
+feature -- String access
+
+	string_value (a_key: STRING_8): detachable STRING_8
+			-- Get string value for `a_key`.
+			-- Supports dot notation: "database.host"
+		require
+			key_not_empty: not a_key.is_empty
+
+	string_value_or_default (a_key, a_default: STRING_8): STRING_8
+			-- Get string value for `a_key`, or `a_default` if not found.
+		require
+			key_not_empty: not a_key.is_empty
+
+	string_value_or_env (a_key, a_env_var: STRING_8): detachable STRING_8
+			-- Get string value for `a_key`, or environment variable `a_env_var`.
+		require
+			key_not_empty: not a_key.is_empty
+			env_var_not_empty: not a_env_var.is_empty
+
+	string_value_or_env_or_default (a_key, a_env_var, a_default: STRING_8): STRING_8
+			-- Get string value for `a_key`, or env var `a_env_var`, or `a_default`.
+		require
+			key_not_empty: not a_key.is_empty
+			env_var_not_empty: not a_env_var.is_empty
+	
+invariant
+	data_exists: data /= Void
+	env_exists: env /= Void
+	file_path_exists: file_path /= Void
+
+		-- from ANY
+	reflexive_equality: standard_is_equal (Current)
+	reflexive_conformance: conforms_to (Current)
+
+note
+	copyright: "Copyright (c) 2024-2025, Larry Rix"
+	license: "MIT License"
+
+end -- class SIMPLE_CONFIG
+
